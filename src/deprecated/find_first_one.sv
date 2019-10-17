@@ -38,18 +38,20 @@ module find_first_one #(
 
     logic [WIDTH-1:0] in_tmp;
 
-    for (genvar i = 0; i < WIDTH; i++) begin
+    generate
+    genvar i, j, level, l, k;
+    for (i = 0; i < WIDTH; i++) begin : ALTERA_200
         assign in_tmp[i] = FLIP ? in_i[WIDTH-1-i] : in_i[i];
     end
 
-    for (genvar j = 0; j < WIDTH; j++) begin
+    for (j = 0; j < WIDTH; j++) begin : ALTERA_201
         assign index_lut[j] = j;
     end
 
-    for (genvar level = 0; level < NUM_LEVELS; level++) begin
+    for (level = 0; level < NUM_LEVELS; level++) begin : ALTERA_202
 
         if (level < NUM_LEVELS-1) begin
-            for (genvar l = 0; l < 2**level; l++) begin
+            for (l = 0; l < 2**level; l++) begin : ALTERA_203
                 assign sel_nodes[2**level-1+l]   = sel_nodes[2**(level+1)-1+l*2] | sel_nodes[2**(level+1)-1+l*2+1];
                 assign index_nodes[2**level-1+l] = (sel_nodes[2**(level+1)-1+l*2] == 1'b1) ?
                     index_nodes[2**(level+1)-1+l*2] : index_nodes[2**(level+1)-1+l*2+1];
@@ -57,7 +59,7 @@ module find_first_one #(
         end
 
         if (level == NUM_LEVELS-1) begin
-            for (genvar k = 0; k < 2**level; k++) begin
+            for (k = 0; k < 2**level; k++) begin : ALTERA_204
                 // if two successive indices are still in the vector...
                 if (k * 2 < WIDTH-1) begin
                     assign sel_nodes[2**level-1+k]   = in_tmp[k*2] | in_tmp[k*2+1];
@@ -76,6 +78,7 @@ module find_first_one #(
             end
         end
     end
+    endgenerate
 
     assign first_one_o = NUM_LEVELS > 0 ? index_nodes[0] : '0;
     assign no_ones_o   = NUM_LEVELS > 0 ? ~sel_nodes[0]  : '1;

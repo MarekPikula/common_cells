@@ -18,7 +18,7 @@
 
 module popcount #(
     parameter int unsigned INPUT_WIDTH = 256,
-    localparam POPCOUNT_WIDTH          = $clog2(INPUT_WIDTH)+1
+    parameter int unsigned POPCOUNT_WIDTH = $clog2(INPUT_WIDTH)+1
 ) (
     input logic [INPUT_WIDTH-1:0]     data_i,
     output logic [POPCOUNT_WIDTH-1:0] popcount_o
@@ -36,6 +36,7 @@ module popcount #(
    end
 
    //Recursive instantiation to build binary adder tree
+   generate
    if (INPUT_WIDTH == 2) begin : leaf_node
      assign left_child_result  = padded_input[1];
      assign right_child_result = padded_input[0];
@@ -50,6 +51,7 @@ module popcount #(
                      .data_i(padded_input[PADDED_WIDTH/2-1:0]),
                      .popcount_o(right_child_result));
    end
+   endgenerate
 
    //Output assignment
    assign popcount_o = left_child_result + right_child_result;

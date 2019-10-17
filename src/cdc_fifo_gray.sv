@@ -25,19 +25,19 @@
 /// - max_delay -from fifo_data_q -to fifo_rdata
 module cdc_fifo_gray #(
   /// The data type of the payload transported by the FIFO.
-  parameter type T = logic,
+  parameter int unsigned T_w = 1,
   /// The FIFO's depth given as 2**LOG_DEPTH.
   parameter int LOG_DEPTH = 3
 )(
   input  logic src_rst_ni,
   input  logic src_clk_i,
-  input  T     src_data_i,
+  input  logic[T_w-1:0] src_data_i,
   input  logic src_valid_i,
   output logic src_ready_o,
 
   input  logic dst_rst_ni,
   input  logic dst_clk_i,
-  output T     dst_data_o,
+  output logic[T_w-1:0] dst_data_o,
   output logic dst_valid_o,
   input  logic dst_ready_i
 );
@@ -52,6 +52,7 @@ module cdc_fifo_gray #(
   localparam int PTR_WIDTH = LOG_DEPTH+1;
   typedef logic [PTR_WIDTH-1:0] pointer_t;
   typedef logic [LOG_DEPTH-1:0] index_t;
+  typedef logic [T_w-1:0] T;
 
   localparam pointer_t PTR_FULL  = (1 << LOG_DEPTH);
   localparam pointer_t PTR_EMPTY = '0;
@@ -68,7 +69,9 @@ module cdc_fifo_gray #(
 
   assign fifo_rdata = fifo_data_q[fifo_ridx];
 
-  for (genvar i = 0; i < 2**LOG_DEPTH; i++) begin : g_word
+  genvar i;
+  generate
+  for (i = 0; i < 2**LOG_DEPTH; i++) begin : g_word
     always_ff @(posedge src_clk_i, negedge src_rst_ni) begin
       if (!src_rst_ni)
         fifo_data_q[i] <= '0;
@@ -76,6 +79,7 @@ module cdc_fifo_gray #(
         fifo_data_q[i] <= fifo_wdata;
     end
   end
+  endgenerate
 
   // Create the write and read pointers in the source and destination domain.
   // These are binary counters combined with a Gray encoder. Both the binary and

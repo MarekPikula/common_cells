@@ -46,10 +46,13 @@ module prioarbiter #(
   // Port 0 has priority over all other ports
   assign ack_o[0] = (req_i[0]) ? en_i : 1'b0;
   // check that the priorities
-  for (genvar i = 1; i < NUM_REQ; i++) begin : gen_arb_req_ports
+  generate
+  genvar i;
+  for (i = 1; i < NUM_REQ; i++) begin : gen_arb_req_ports
       // for every subsequent port check the priorities of the previous port
       assign ack_o[i] = (req_i[i] & ~(|ack_o[i-1:0])) ? en_i : 1'b0;
   end
+  endgenerate
 
   onehot_to_bin #(
     .ONEHOT_WIDTH ( NUM_REQ )
@@ -58,6 +61,7 @@ module prioarbiter #(
     .bin    ( idx   )
   );
 
+  generate
   if (LOCK_IN) begin : gen_lock_in
     // latch decision in case we got at least one req and no acknowledge
     assign lock_d         = (|req_i) & ~en_i;
@@ -67,6 +71,7 @@ module prioarbiter #(
     assign lock_d         = '0;
     assign arb_sel_lock_d = '0;
   end
+  endgenerate
 
   always_ff @(posedge clk_i or negedge rst_ni) begin : p_regs
     if (!rst_ni) begin

@@ -14,15 +14,18 @@
 // Description: Simple shift register for arbitrary depth and types
 
 module shift_reg #(
-    parameter type dtype         = logic,
+    parameter int unsigned dtype_w = 1,
     parameter int unsigned Depth = 1
 )(
     input  logic clk_i,    // Clock
     input  logic rst_ni,   // Asynchronous reset active low
-    input  dtype d_i,
-    output dtype d_o
+    input  logic[dtype_w-1:0] d_i,
+    output logic[dtype_w-1:0] d_o
 );
 
+    typedef logic[dtype_w-1:0] dtype;
+
+    generate
     // register of depth 0 is a wire
     if (Depth == 0) begin
         assign d_o = d_i;
@@ -49,5 +52,6 @@ module shift_reg #(
             end
         end
     end
+    endgenerate
 
 endmodule

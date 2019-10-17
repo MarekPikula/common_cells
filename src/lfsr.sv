@@ -244,6 +244,7 @@ end
 // block cipher layers
 ////////////////////////////////////////////////////////////////////////
 
+generate
 if (CipherLayers > unsigned'(0)) begin : g_cipher_layers
   logic [63:0] ciph_layer;
   localparam int unsigned NumRepl = ((64+LfsrWidth)/LfsrWidth);
@@ -280,6 +281,7 @@ if (CipherLayers > unsigned'(0)) begin : g_cipher_layers
 end else begin : g_no_cipher_layers
   assign out_o    = lfsr_q[OutWidth-1:0];
 end
+endgenerate
 
 ////////////////////////////////////////////////////////////////////////
 // assertions

@@ -21,22 +21,24 @@
 /// delay path needs to be specified from fifo_data_q to dst_data_o.
 module cdc_fifo_2phase #(
   /// The data type of the payload transported by the FIFO.
-  parameter type T = logic,
+  parameter int unsigned T_w = 1,
   /// The FIFO's depth given as 2**LOG_DEPTH.
   parameter int LOG_DEPTH = 3
 )(
   input  logic src_rst_ni,
   input  logic src_clk_i,
-  input  T     src_data_i,
+  input  logic[T_w-1:0] src_data_i,
   input  logic src_valid_i,
   output logic src_ready_o,
 
   input  logic dst_rst_ni,
   input  logic dst_clk_i,
-  output T     dst_data_o,
+  output logic[T_w-1:0] dst_data_o,
   output logic dst_valid_o,
   input  logic dst_ready_i
 );
+
+  typedef logic [T_w-1:0] T;
 
   // Check the invariants.
   //pragma translate_off
@@ -64,7 +66,9 @@ module cdc_fifo_2phase #(
 
   assign fifo_rdata = fifo_data_q[fifo_ridx];
 
-  for (genvar i = 0; i < 2**LOG_DEPTH; i++) begin : g_word
+  generate
+  genvar i;
+  for (i = 0; i < 2**LOG_DEPTH; i++) begin : g_word
     always_ff @(posedge src_clk_i, negedge src_rst_ni) begin
       if (!src_rst_ni)
         fifo_data_q[i] <= '0;
@@ -72,6 +76,7 @@ module cdc_fifo_2phase #(
         fifo_data_q[i] <= fifo_wdata;
     end
   end
+  endgenerate
 
   // Allocate the read and write pointers in the source and destination domain.
   pointer_t src_wptr_q, dst_wptr, src_rptr, dst_rptr_q;
@@ -98,7 +103,7 @@ module cdc_fifo_2phase #(
   assign dst_valid_o = ((dst_rptr_q ^ dst_wptr) != PTR_EMPTY);
 
   // Transport the read and write pointers across the clock domain boundary.
-  cdc_2phase #(pointer_t) i_cdc_wptr (
+  cdc_2phase #($bits(pointer_t)) i_cdc_wptr (
     .src_rst_ni  ( src_rst_ni ),
     .src_clk_i   ( src_clk_i  ),
     .src_data_i  ( src_wptr_q ),
@@ -111,7 +116,7 @@ module cdc_fifo_2phase #(
     .dst_ready_i ( 1'b1       )
   );
 
-  cdc_2phase #(pointer_t) i_cdc_rptr (
+  cdc_2phase #($bits(pointer_t)) i_cdc_rptr (
     .src_rst_ni  ( dst_rst_ni ),
     .src_clk_i   ( dst_clk_i  ),
     .src_data_i  ( dst_rptr_q ),

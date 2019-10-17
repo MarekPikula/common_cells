@@ -14,20 +14,21 @@
 module stream_delay #(
     parameter bit   StallRandom = 0,
     parameter int   FixedDelay  = 1,
-    parameter type  payload_t  = logic
+    parameter int unsigned payload_w = 1
 )(
     input  logic     clk_i,
     input  logic     rst_ni,
 
-    input  payload_t payload_i,
+    input  logic[payload_w-1:0] payload_i,
     output logic     ready_o,
     input  logic     valid_i,
 
-    output payload_t payload_o,
+    output logic[payload_w-1:0] payload_o,
     input  logic     ready_i,
     output logic     valid_o
 );
 
+    generate
     if (FixedDelay == 0 && !StallRandom) begin : pass_through
         assign ready_o = ready_i;
         assign valid_o = valid_i;
@@ -128,5 +129,6 @@ module stream_delay #(
             end
         end
     end
+    endgenerate
 
 endmodule

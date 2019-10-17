@@ -16,7 +16,7 @@ module fifo #(
     parameter int unsigned DATA_WIDTH   = 32,   // default data width if the fifo is of type logic
     parameter int unsigned DEPTH        = 8,    // depth can be arbitrary from 0 to 2**32
     parameter int unsigned THRESHOLD    = 1,    // fill count until when to assert threshold_o
-    parameter type dtype                = logic [DATA_WIDTH-1:0]
+    parameter int unsigned dtype_w      = DATA_WIDTH
 )(
     input  logic  clk_i,            // Clock
     input  logic  rst_ni,           // Asynchronous reset active low
@@ -27,10 +27,10 @@ module fifo #(
     output logic  empty_o,          // queue is empty
     output logic  threshold_o,      // the FIFO is above the specified threshold
     // as long as the queue is not full we can push new data
-    input  dtype  data_i,           // data to push into the queue
+    input  logic [dtype_w-1:0] data_i,  // data to push into the queue
     input  logic  push_i,           // data is valid and can be pushed to the queue
     // as long as the queue is not empty we can pop new elements
-    output dtype  data_o,           // output data
+    output logic [dtype_w-1:0] data_o,  // output data
     input  logic  pop_i             // pop head from queue
 );
     fifo_v2 #(
@@ -38,7 +38,7 @@ module fifo #(
         .DATA_WIDTH   ( DATA_WIDTH   ),
         .DEPTH        ( DEPTH        ),
         .ALM_FULL_TH  ( THRESHOLD    ),
-        .dtype        ( dtype        )
+        .dtype_w      ( dtype_w      )
     ) impl (
         .clk_i       ( clk_i       ),
         .rst_ni      ( rst_ni      ),

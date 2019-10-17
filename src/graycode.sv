@@ -28,6 +28,10 @@ module gray_to_binary #(
     input  logic [N-1:0] A,
     output logic [N-1:0] Z
 );
-    for (genvar i = 0; i < N; i++)
+    generate
+    genvar i;
+    for (i = 0; i < N; i++) begin : ALTERA_105
         assign Z[i] = ^A[N-1:i];
+    end
+    endgenerate
 endmodule

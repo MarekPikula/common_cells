@@ -78,7 +78,9 @@ module stream_fork #(
     end
 
     // Output control FSM
-    for (genvar i = 0; i < N_OUP; i++) begin: gen_oup_state
+    generate
+    genvar i;
+    for (i = 0; i < N_OUP; i++) begin: gen_oup_state
         state_t oup_state_d, oup_state_q;
 
         always_comb begin
@@ -118,6 +120,7 @@ module stream_fork #(
             end
         end
     end
+    endgenerate
 
     assign all_ones = '1;   // Synthesis fix for Vivado, which does not correctly compute the width
                             // of the '1 literal when assigned to a port of parametrized width.

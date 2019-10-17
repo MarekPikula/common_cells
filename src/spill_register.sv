@@ -15,17 +15,19 @@
 /// A register with handshakes that completely cuts any combinational paths
 /// between the input and output.
 module spill_register #(
-  parameter type T = logic
+  parameter int unsigned T_w = 1
 )(
   input  logic clk_i   ,
   input  logic rst_ni  ,
   input  logic valid_i ,
   output logic ready_o ,
-  input  T     data_i  ,
+  input  logic[T_w-1:0] data_i,
   output logic valid_o ,
   input  logic ready_i ,
-  output T     data_o
+  output logic[T_w-1:0] data_o
 );
+
+  typedef logic[T_w-1:0] T;
 
   // The A register.
   T a_data_q;

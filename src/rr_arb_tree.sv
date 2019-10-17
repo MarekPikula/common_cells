@@ -34,7 +34,6 @@
 module rr_arb_tree #(
   parameter int unsigned NumIn      = 64,
   parameter int unsigned DataWidth  = 32,
-  parameter type         DataType   = logic [DataWidth-1:0],
   parameter bit          ExtPrio    = 1'b0, // set to 1'b1 to enable
   parameter bit          AxiVldRdy  = 1'b0, // treat req/gnt as vld/rdy
   parameter bit          LockIn     = 1'b0  // set to 1'b1 to enable
@@ -48,14 +47,17 @@ module rr_arb_tree #(
   /* verilator lint_off UNOPTFLAT */
   output logic [NumIn-1:0]                 gnt_o,
   /* verilator lint_on UNOPTFLAT */
-  input  DataType [NumIn-1:0]              data_i,
+  input  logic [DataWidth-1:0] [NumIn-1:0] data_i,
   // arbitrated output
   input  logic                             gnt_i,
   output logic                             req_o,
-  output DataType                          data_o,
+  output logic [DataWidth-1:0]             data_o,
   output logic [$clog2(NumIn)-1:0]         idx_o
 );
+  typedef logic [DataWidth-1:0] DataType;
+
   // just pass through in this corner case
+  generate
   if (NumIn == unsigned'(1)) begin
     assign req_o    = req_i[0];
     assign gnt_o[0] = gnt_i;
@@ -151,9 +153,10 @@ module rr_arb_tree #(
 
     assign gnt_nodes[0] = gnt_i;
 
+    genvar level, l;
     // arbiter tree
-    for (genvar level = 0; unsigned'(level) < NumLevels; level++) begin : gen_levels
-      for (genvar l = 0; l < 2**level; l++) begin : gen_level
+    for (level = 0; unsigned'(level) < NumLevels; level++) begin : gen_levels
+      for (l = 0; l < 2**level; l++) begin : gen_level
         // local select signal
         logic sel;
         // index calcs
@@ -240,5 +243,6 @@ module rr_arb_tree #(
     `endif
     // pragma translate_on
   end
+  endgenerate
 
 endmodule : rr_arb_tree

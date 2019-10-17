@@ -42,32 +42,36 @@
 module id_queue #(
     parameter int ID_WIDTH  = 0,
     parameter int CAPACITY  = 0,
-    parameter type data_t   = logic,
+    parameter int unsigned data_w = 1,
     // Dependent parameters, DO NOT OVERRIDE!
-    localparam type id_t    = logic[ID_WIDTH-1:0],
-    localparam type mask_t  = logic[$bits(data_t)-1:0]
+    parameter int unsigned id_w   = ID_WIDTH,
+    parameter int unsigned mask_w = data_w
 ) (
     input  logic    clk_i,
     input  logic    rst_ni,
 
-    input  id_t     inp_id_i,
-    input  data_t   inp_data_i,
+    input  logic[id_w-1:0]   inp_id_i,
+    input  logic[data_w-1:0] inp_data_i,
     input  logic    inp_req_i,
     output logic    inp_gnt_o,
 
-    input  data_t   exists_data_i,
-    input  mask_t   exists_mask_i,
+    input  logic[data_w-1:0] exists_data_i,
+    input  logic[mask_w-1:0] exists_mask_i,
     input  logic    exists_req_i,
     output logic    exists_o,
     output logic    exists_gnt_o,
 
-    input  id_t     oup_id_i,
+    input  logic[id_w-1:0]   oup_id_i,
     input  logic    oup_pop_i,
     input  logic    oup_req_i,
-    output data_t   oup_data_o,
+    output logic[data_w-1:0] oup_data_o,
     output logic    oup_data_valid_o,
     output logic    oup_gnt_o
 );
+
+    typedef logic[id_w-1:0] id_t;
+    typedef logic[data_w-1:0] data_t;
+    typedef logic[mask_w-1:0] mask_t;
 
     // Capacity of the head-tail table, which associates an ID with corresponding head and tail
     // indices.
@@ -117,10 +121,14 @@ module id_queue #(
     ld_idx_t                        linked_data_free_idx;
 
     // Find the index in the head-tail table that matches a given ID.
-    for (genvar i = 0; i < HT_CAPACITY; i++) begin: gen_idx_match
+    generate
+    genvar i;
+    for (i = 0; i < HT_CAPACITY; i++) begin: gen_idx_match
         assign idx_matches_id[i] = match_id_valid && (head_tail_q[i].id == match_id) &&
                 !head_tail_q[i].free;
     end
+    endgenerate
+
     assign no_id_match = !(|idx_matches_id);
     onehot_to_bin #(
         .ONEHOT_WIDTH (HT_CAPACITY)
@@ -130,9 +138,11 @@ module id_queue #(
     );
 
     // Find the first free index in the head-tail table.
-    for (genvar i = 0; i < HT_CAPACITY; i++) begin: gen_head_tail_free
+    generate
+    for (i = 0; i < HT_CAPACITY; i++) begin: gen_head_tail_free
         assign head_tail_free[i] = head_tail_q[i].free;
     end
+    endgenerate
     lzc #(
         .WIDTH  (HT_CAPACITY),
         .MODE   (0)         // Start at index 0.
@@ -143,9 +153,11 @@ module id_queue #(
     );
 
     // Find the first free index in the linked data table.
-    for (genvar i = 0; i < CAPACITY; i++) begin: gen_linked_data_free
+    generate
+    for (i = 0; i < CAPACITY; i++) begin: gen_linked_data_free
         assign linked_data_free[i] = linked_data_q[i].free;
     end
+    endgenerate
     lzc #(
         .WIDTH  (CAPACITY),
         .MODE   (0)         // Start at index 0.
@@ -212,9 +224,11 @@ module id_queue #(
     end
 
     // Exists Lookup
-    for (genvar i = 0; i < CAPACITY; i++) begin: gen_lookup
+    generate
+    genvar j;
+    for (i = 0; i < CAPACITY; i++) begin: gen_lookup
         mask_t exists_match_bits;
-        for (genvar j = 0; j < $bits(data_t); j++) begin: gen_mask
+        for (j = 0; j < $bits(data_t); j++) begin: gen_mask
             always_comb begin
                 if (linked_data_q[i].free) begin
                     exists_match_bits[j] = 1'b0;
@@ -229,6 +243,7 @@ module id_queue #(
         end
         assign exists_match[i] = (&exists_match_bits);
     end
+    endgenerate
     always_comb begin
         exists_gnt_o = 1'b0;
         exists_o = 'x;
@@ -239,7 +254,8 @@ module id_queue #(
     end
 
     // Registers
-    for (genvar i = 0; i < CAPACITY; i++) begin: gen_ffs
+    generate
+    for (i = 0; i < CAPACITY; i++) begin: gen_ffs
         always_ff @(posedge clk_i, negedge rst_ni) begin
             if (!rst_ni) begin
                 head_tail_q[i]      <= '{free: 1'b1, default: 'x};
@@ -252,6 +268,7 @@ module id_queue #(
             end
         end
     end
+    endgenerate
 
     // Validate parameters.
 // pragma translate_off
